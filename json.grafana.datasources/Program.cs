@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace json.grafana.datasources
+namespace Json.Grafana.DataSources
 {
     public class Program
     {
