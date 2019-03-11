@@ -3,9 +3,13 @@
     using System;
     using System.Collections.Generic;
 
-    public class TimeSeries
+    public class Table
     {
+        public List<dynamic> Columns { get; set; }
 
+        public List<dynamic> Rows { get; set; }
+
+        public string Type { get; set; }
     }
 
     public class TimeSerie
