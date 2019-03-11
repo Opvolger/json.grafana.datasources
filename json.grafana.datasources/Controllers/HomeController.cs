@@ -69,7 +69,7 @@ namespace Json.Grafana.DataSources.Controllers
                 {
                     if (Directory.Exists(enumerateDirectory.FullName))
                     {
-                        response.Add(GetTimeSerie(enumerateDirectory.Name.Split("_daily")[0], enumerateDirectory.FullName));
+                        response.Add(GetTimeSerie(GetName(enumerateDirectory.FullName), enumerateDirectory.FullName));
                     }
                 }
             }
@@ -84,11 +84,21 @@ namespace Json.Grafana.DataSources.Controllers
                     docPath = docPath + "\\GrafanaJson\\" + target.target;
                     if (Directory.Exists(docPath))
                     {
-                        response.Add(GetTimeSerie(name, docPath));
+                        response.Add(GetTimeSerie(GetName(docPath), docPath));
                     }
                 }
             }
             return new ActionResult<IEnumerable<TimeSerie>>(response);
+        }
+
+        private string GetName(string dir)
+        {
+            using (StreamReader r = new StreamReader($"{dir}\\info.json"))
+            {
+                string json = r.ReadToEnd();
+                dynamic data = JsonConvert.DeserializeObject<dynamic>(json);
+                return data.Name;
+            }
         }
 
         private TimeSerie GetTimeSerie(string name, string dir)
