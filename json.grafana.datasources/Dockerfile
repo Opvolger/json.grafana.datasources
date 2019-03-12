@@ -18,4 +18,4 @@ RUN dotnet publish "json.grafana.datasources.csproj" -c Release -o /app
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app .
-ENTRYPOINT ["dotnet", "json.grafana.datasources.dll"]
+ENTRYPOINT ["dotnet", "Json.Grafana.DataSources.dll"]
