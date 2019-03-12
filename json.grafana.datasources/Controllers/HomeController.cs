@@ -13,7 +13,7 @@
     [ApiController]
     public class HomeController : ControllerBase
     {
-        private string workdir = "D:\\ftb\\monitoring.wsus\\out"; // TODO in variable
+        public static AppSettings settings;
 
         // GET api/values
         [HttpGet]
@@ -30,7 +30,7 @@
         public ActionResult<IEnumerable<string>> Search()
         {
             // Set a variable to the Documents path.
-            string docPath = workdir;
+            string docPath = settings.DirectoryGrafanaJSON;
             Console.WriteLine(docPath);
 
             var dirPrograms = new DirectoryInfo(docPath);
@@ -52,7 +52,6 @@
 
         public static dynamic GetValueOfDynamic(dynamic value)
         {
-            // TODO DateTime
             if (value.Value is bool b)
             {
                 return b ? 1 : 0;
@@ -68,8 +67,8 @@
 
         private static float GetTimeGrafana(DateTime dateTime)
         {
-            float unixTimestamp = ((Int32)(dateTime.Subtract(new DateTime(1970, 1, 1))).TotalSeconds);
-            return unixTimestamp * 1000;
+            float unixTimestamp = (int)(dateTime.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
+            return unixTimestamp * 1000; // grafana werkt met ms
         }
 
         [Produces("application/json")]
@@ -77,7 +76,7 @@
         [HttpPost]
         public ActionResult<dynamic> Query([FromBody]dynamic value)
         {
-            string docPath = workdir;
+            string docPath = settings.DirectoryGrafanaJSON;
             dynamic data = value;
             
             if (data.targets[0].type == "table")
@@ -85,15 +84,15 @@
                 var table = new Table { Type = "table", Rows = new List<dynamic>(), Columns = new List<dynamic>() };
                 // We geven alleen het eerste query object terug bij type = table
                 // We weten niet of alle targets wel de zelfde kolommen hebben
-                var dir = $"{docPath}\\{data.targets[0].target}";
-                if (Directory.Exists(dir) && System.IO.File.Exists($"{dir}\\table.json"))
+                var dir = $"{docPath}/{data.targets[0].target}";
+                if (Directory.Exists(dir) && System.IO.File.Exists($"{dir}/table.json"))
                 {
                     dynamic timeColum = new System.Dynamic.ExpandoObject();
                     timeColum.text = "Time";
                     timeColum.type = "time";
                     timeColum.jsonvalue = "Time";
                     table.Columns.Add(timeColum);
-                    using (StreamReader r = new StreamReader($"{dir}\\table.json"))
+                    using (StreamReader r = new StreamReader($"{dir}/table.json"))
                     {
                         string json = r.ReadToEnd();
                         List<dynamic> columns = JsonConvert.DeserializeObject<List<dynamic>>(json);
@@ -123,7 +122,7 @@
                     // laatste gegevens alleen weergeven in table
                     var enumerateDirectory = dirPrograms.EnumerateDirectories().OrderByDescending(b => b.Name).First();
                     var dateData = GetDateTime(enumerateDirectory.Name);
-                    using (StreamReader r = new StreamReader($"{enumerateDirectory.FullName}\\data.json"))
+                    using (StreamReader r = new StreamReader($"{enumerateDirectory.FullName}/data.json"))
                     {
                         string json = r.ReadToEnd();
                         List<JObject> items = JsonConvert.DeserializeObject<List<JObject>>(json);
@@ -163,7 +162,7 @@
 
                     foreach (var enumerateDirectory in dirPrograms.EnumerateDirectories())
                     {
-                        if (Directory.Exists(enumerateDirectory.FullName) && System.IO.File.Exists($"{enumerateDirectory.FullName}\\info.json"))
+                        if (Directory.Exists(enumerateDirectory.FullName) && System.IO.File.Exists($"{enumerateDirectory.FullName}/info.json"))
                         {
                             response.Add(GetTimeSerie(GetName(enumerateDirectory.FullName), enumerateDirectory.FullName));
                         }
@@ -175,7 +174,7 @@
                     foreach (var target in data.targets)
                     {
                         string name = target.target;
-                        var path = docPath + "\\" + target.target;
+                        var path = docPath + "/" + target.target;
                         if (Directory.Exists(path))
                         {
                             response.Add(GetTimeSerie(GetName(path), path));
@@ -200,7 +199,7 @@
 
         private string GetName(string dir)
         {
-            using (StreamReader r = new StreamReader($"{dir}\\info.json"))
+            using (StreamReader r = new StreamReader($"{dir}/info.json"))
             {
                 string json = r.ReadToEnd();
                 dynamic data = JsonConvert.DeserializeObject<dynamic>(json);
@@ -216,7 +215,7 @@
             foreach (var enumerateDirectory in dirPrograms.EnumerateDirectories())
             {
                 var dateData = GetDateTime(enumerateDirectory.Name);
-                using (StreamReader r = new StreamReader($"{enumerateDirectory.FullName}\\data.json"))
+                using (StreamReader r = new StreamReader($"{enumerateDirectory.FullName}/data.json"))
                 {
                     string json = r.ReadToEnd();
                     List<dynamic> items = JsonConvert.DeserializeObject<List<dynamic>>(json);

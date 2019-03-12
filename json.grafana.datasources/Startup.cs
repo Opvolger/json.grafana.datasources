@@ -6,6 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Json.Grafana.DataSources
 {
+    using Controllers;
+
     public class Startup
     {
         public Startup(IConfiguration configuration)
@@ -18,6 +20,8 @@ namespace Json.Grafana.DataSources
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            var appSettings = Configuration.GetSection("AppSettings").Get<AppSettings>();
+            HomeController.settings = appSettings;
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
 
