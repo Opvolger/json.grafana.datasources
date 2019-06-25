@@ -4,6 +4,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Net;
     using Microsoft.AspNetCore.Mvc;
     using Models;
     using Newtonsoft.Json;
@@ -23,7 +24,32 @@
             return "Hack the planet!";
         }
 
-        // GET api/values
+        [Route("send_data")]
+        [HttpPost]
+        public IActionResult SendData([FromBody] dynamic value)
+        {
+            try
+            {
+                if (value.name.ToString().Contains('.') || value.name.ToString().Contains('/'))
+                {
+                    throw new Exception("invalid name");
+                }
+                string docPath = Path.Combine(settings.DirectoryGrafanaJSON, value.name.ToString());
+                // create dir met data
+                var datetime_dir = DateTime.Now.ToString("yyyy-MM-dd HH_mm_ss");
+                var fullPath = Path.Combine(docPath, datetime_dir);
+                Directory.CreateDirectory(fullPath);
+                dynamic data_is_json_test = JsonConvert.DeserializeObject<List<dynamic>>(value.data.ToString());
+                System.IO.File.WriteAllText(Path.Combine(fullPath, "data.json"), value.data.ToString());
+                return StatusCode((int)HttpStatusCode.OK);
+            }
+            catch (Exception e)
+            {
+                return StatusCode((int)HttpStatusCode.InternalServerError);
+            }
+        }
+
+
         [Produces("application/json")]
         [Route("search")]
         [HttpPost]
@@ -120,7 +146,7 @@
 
                     var dirPrograms = new DirectoryInfo(dir);
                     // laatste gegevens alleen weergeven in table
-                    var enumerateDirectory = dirPrograms.EnumerateDirectories().OrderByDescending(b => b.Name).First();
+                    var enumerateDirectory = dirPrograms.EnumerateDirectories().Where(b=> !IsDirectoryEmpty(b.FullName)).OrderByDescending(b => b.Name).First();
                     var dateData = GetDateTime(enumerateDirectory.Name);
                     using (StreamReader r = new StreamReader($"{enumerateDirectory.FullName}/data.json"))
                     {
@@ -185,6 +211,11 @@
             }
 
             
+        }
+
+        private bool IsDirectoryEmpty(string path)
+        {
+            return !Directory.EnumerateFileSystemEntries(path).Any();
         }
 
         private DateTime GetDateTime(string x)
