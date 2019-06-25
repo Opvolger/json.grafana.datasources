@@ -39,8 +39,8 @@
                 var datetime_dir = DateTime.Now.ToString("yyyy-MM-dd HH_mm_ss");
                 var fullPath = Path.Combine(docPath, datetime_dir);
                 Directory.CreateDirectory(fullPath);
-                dynamic data_is_json_test = JsonConvert.DeserializeObject<List<dynamic>>(value.data.ToString());
-                System.IO.File.WriteAllText(Path.Combine(fullPath, "data.json"), value.data.ToString());
+                dynamic data_is_json_test = JsonConvert.DeserializeObject<List<dynamic>>(value.json_data.ToString());
+                System.IO.File.WriteAllText(Path.Combine(fullPath, "data.json"), value.json_data.ToString());
                 return StatusCode((int)HttpStatusCode.OK);
             }
             catch (Exception e)
@@ -186,7 +186,7 @@
                     // geen target meegegeven, die alle dirs
                     var dirPrograms = new DirectoryInfo(docPath);
 
-                    foreach (var enumerateDirectory in dirPrograms.EnumerateDirectories())
+                    foreach (var enumerateDirectory in dirPrograms.EnumerateDirectories().Where(b => !IsDirectoryEmpty(b.FullName)).OrderBy(b => b.Name))
                     {
                         if (Directory.Exists(enumerateDirectory.FullName) && System.IO.File.Exists($"{enumerateDirectory.FullName}/info.json"))
                         {
