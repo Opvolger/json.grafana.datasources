@@ -243,7 +243,7 @@
             Console.WriteLine(dir);
             var dirPrograms = new DirectoryInfo(dir);
             var floatList = new List<float[]>();
-            foreach (var enumerateDirectory in dirPrograms.EnumerateDirectories())
+            foreach (var enumerateDirectory in dirPrograms.EnumerateDirectories().Where(b => !IsDirectoryEmpty(b.FullName)).OrderBy(b => b.Name))
             {
                 var dateData = GetDateTime(enumerateDirectory.Name);
                 using (StreamReader r = new StreamReader($"{enumerateDirectory.FullName}/data.json"))
