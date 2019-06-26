@@ -2,9 +2,10 @@
 {
     using System.Collections.Generic;
 
-    public class TimeSerie
+    public class TimeSerie : QueryResponse
     {
         public string Target { get; set; }
+
         public List<float[]> Datapoints { get; set; }
     }
 }

@@ -6,6 +6,7 @@
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <UserSecretsId>2e6a2812-dcf5-4ea6-b263-5c962fadfb7b</UserSecretsId>
     <AssemblyName>Json.Grafana.DataSources</AssemblyName>
+    <RootNamespace>Json.Grafana.DataSources</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>

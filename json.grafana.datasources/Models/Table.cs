@@ -2,7 +2,7 @@
 {
     using System.Collections.Generic;
 
-    public class Table
+    public class Table : QueryResponse
     {
         public List<dynamic> Columns { get; set; }
 
