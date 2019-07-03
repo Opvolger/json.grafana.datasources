@@ -27,16 +27,16 @@
         [Route("/{id}")]
         public ActionResult<GetInfo> Get(string id)
         {
-            var response = new GetInfo(){Name = id};
+            var response = new GetInfo{Name = id};
             string docPath = GetNamePath(id);
             if (Directory.Exists(docPath))
             {
-                using (StreamReader r = new StreamReader($"{docPath}\\table.json"))
+                using (StreamReader r = new StreamReader(Path.Combine(docPath, "table.json")))
                 {
                     string json = r.ReadToEnd();
                     response.Table = JsonConvert.DeserializeObject<List<GetInfoTableColumn>>(json);
                 }
-                using (StreamReader r = new StreamReader($"{docPath}\\info.json"))
+                using (StreamReader r = new StreamReader(Path.Combine(docPath, "info.json")))
                 {
                     string json = r.ReadToEnd();
                     response.Info = JsonConvert.DeserializeObject<GetInfoInfo>(json);
@@ -68,31 +68,33 @@
         {
             try
             {
-                if (value.name.ToString().Contains('.') || value.name.ToString().Contains('/'))
-                {
-                    throw new Exception("invalid name");
-                }
                 string docPath = GetNamePath(value.name.ToString());
                 // create dir met data
-                var datetime_dir = DateTime.Now.ToString("yyyy-MM-dd HH_mm_ss");
+                var datetimeDir = DateTime.Now.ToString("yyyy-MM-dd HH_mm_ss");
                 if (!Directory.Exists(docPath))
                 {
                     Directory.CreateDirectory(docPath);
                 }
-                var fullPath = Path.Combine(docPath, datetime_dir);
+                var fullPath = Path.Combine(docPath, datetimeDir);
                 Directory.CreateDirectory(fullPath);
-                dynamic data_is_json_test = JsonConvert.DeserializeObject<List<dynamic>>(value.json_data.ToString());
+                // controle op geldige json
+                JsonConvert.DeserializeObject<List<dynamic>>(value.json_data.ToString());
                 System.IO.File.WriteAllText(Path.Combine(fullPath, "data.json"), value.json_data.ToString());
                 return StatusCode((int)HttpStatusCode.OK);
             }
             catch (Exception e)
             {
+                Console.WriteLine(e);
                 return StatusCode((int)HttpStatusCode.InternalServerError);
             }
         }
 
         private static string GetNamePath(string name)
         {
+            if (name.Contains('.') || name.Contains('/'))
+            {
+                throw new Exception("invalid name");
+            }
             string docPath = Path.Combine(Settings.DirectoryGrafanaJSON, name);
             return docPath;
         }
