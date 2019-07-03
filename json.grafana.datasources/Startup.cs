@@ -21,7 +21,8 @@ namespace Json.Grafana.DataSources
         public void ConfigureServices(IServiceCollection services)
         {
             var appSettings = Configuration.GetSection("AppSettings").Get<AppSettings>();
-            HomeController.settings = appSettings;
+            HomeController.Settings = appSettings;
+            SimpelJsonController.Settings = appSettings;
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
         }
 
