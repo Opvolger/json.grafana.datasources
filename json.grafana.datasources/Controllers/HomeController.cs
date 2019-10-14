@@ -8,23 +8,15 @@
     using Models;
     using Newtonsoft.Json;
 
-
+    [Route("storedata")]
     [ApiController]
     public class HomeController : ControllerBase
     {
         public static AppSettings Settings;
 
-        // GET api/values
-        [HttpGet]
-        [Route("")]
-        public ActionResult<string> Get()
-        {
-            return "Hack the planet!";
-        }
-
         [Produces("application/json")]
         [HttpGet]
-        [Route("/{id}")]
+        [Route("{id}")]
         public ActionResult<GetInfo> Get(string id)
         {
             var response = new GetInfo{Name = id};

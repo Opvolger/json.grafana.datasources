@@ -7,9 +7,12 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Json.Grafana.DataSources
 {
     using Controllers;
+    using Swashbuckle.AspNetCore.Swagger;
 
     public class Startup
     {
+        private static string title = "Json Grafana DataSources";
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
@@ -24,6 +27,11 @@ namespace Json.Grafana.DataSources
             HomeController.Settings = appSettings;
             SimpelJsonController.Settings = appSettings;
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Info { Title = title, Version = "v1" });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -41,6 +49,12 @@ namespace Json.Grafana.DataSources
 
             //app.UseHttpsRedirection();
             app.UseMvc();
+            app.UseSwagger();
+
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", title);
+            });
         }
     }
 }

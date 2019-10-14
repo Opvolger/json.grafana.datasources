@@ -9,7 +9,7 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 
-
+    [Route("simpeljson")]
     [ApiController]
     public class SimpelJsonController : ControllerBase
     {
