@@ -2,18 +2,24 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Dynamic;
     using System.IO;
     using System.Linq;
+    using Logic;
     using Microsoft.AspNetCore.Mvc;
     using Models;
-    using Newtonsoft.Json;
     using Newtonsoft.Json.Linq;
 
     [Route("simpeljson")]
     [ApiController]
     public class SimpelJsonController : ControllerBase
     {
-        public static AppSettings Settings;
+        private readonly IPathServices pathServices;
+
+        public SimpelJsonController(IPathServices pathServices)
+        {
+            this.pathServices = pathServices;
+        }
 
         [Produces("application/json")]
         [Route("search")]
@@ -21,7 +27,7 @@
         public ActionResult<IEnumerable<string>> Search()
         {
             // Set a variable to the Documents path.
-            string docPath = Settings.DirectoryGrafanaJSON;
+            string docPath = pathServices.DirectoryGrafanaJSON;
             Console.WriteLine(docPath);
 
             var dirPrograms = new DirectoryInfo(docPath);
@@ -41,6 +47,22 @@
             return null;
         }
 
+        public static dynamic GetDefaultValueOfDynamic(string type)
+        {
+            if (type == "bool")
+            {
+                return 0;
+            }
+
+            if (type == "DateTime")
+            {
+                return GrafanaHelpers.GetTimeGrafana(DateTime.MinValue);
+            }
+
+
+            return string.Empty;
+        }
+
         public static dynamic GetValueOfDynamic(dynamic value)
         {
             if (value.Value is bool b)
@@ -50,24 +72,18 @@
 
             if (value.Value is DateTime c)
             {
-                return GetTimeGrafana(c);
+                return GrafanaHelpers.GetTimeGrafana(c);
             }
             return value.Value;
-
         }
 
-        private static float GetTimeGrafana(DateTime dateTime)
-        {
-            float unixTimestamp = (int)(dateTime.Subtract(new DateTime(1970, 1, 1))).TotalSeconds;
-            return unixTimestamp * 1000; // grafana werkt met ms
-        }
 
         [Produces("application/json")]
         [Route("query")]
         [HttpPost]
         public ActionResult<dynamic> Query([FromBody] dynamic value)
         {
-            string docPath = Settings.DirectoryGrafanaJSON;
+            string docPath = pathServices.DirectoryGrafanaJSON;
             dynamic data = value;
 
             var response = new List<QueryResponse>();
@@ -83,7 +99,7 @@
                     if (Directory.Exists(enumerateDirectory.FullName) &&
                         System.IO.File.Exists($"{enumerateDirectory.FullName}/info.json"))
                     {
-                        response.Add(GetTimeSerie(GetName(enumerateDirectory.FullName), enumerateDirectory.FullName));
+                        response.Add(GetTimeSerie(GetDescription(enumerateDirectory.FullName), enumerateDirectory.FullName));
                     }
                 }
             }else
@@ -92,16 +108,28 @@
                 {
                     string name = target.target;
                     var dir = $"{docPath}/{name}";
-                    if (Directory.Exists(dir))
+
+                    var typeData_target = GetTypeData(dir);
+
+                    switch (typeData_target)
                     {
-                        if (target.type == "table")
-                        {
-                            response.Add(GetTable(dir));
-                        }
-                        else
-                        {
-                            response.Add(GetTimeSerie(GetName(dir), dir));
-                        }
+                        case TypeData.Default:
+                            if (target.type == "table")
+                            {
+                                response.Add(GetTableDefault(dir));
+                            }
+                            else
+                            {
+                                response.Add(GetTimeSerie(GetDescription(dir), dir));
+                            }                            
+                            break;
+                        case TypeData.KeyValue:
+                            if (target.type == "table")
+                            {
+                                response.Add(GetTableKeyValue(dir));
+                            }
+                            // TODO
+                            break;
                     }
                 }
             }
@@ -114,82 +142,157 @@
             return !Directory.EnumerateFileSystemEntries(path).Any();
         }
 
-        private Table GetTable(string dir)
+        private TypeData GetTypeData(string dir)
         {
-            var table = new Table { Type = "table", Rows = new List<dynamic>(), Columns = new List<dynamic>() };
-            // We geven alleen het eerste query object terug bij type = table
-            // We weten niet of alle targets wel de zelfde kolommen hebben            
-            if (Directory.Exists(dir) && System.IO.File.Exists($"{dir}/table.json"))
+            dynamic info = FileHelper.GetJson<dynamic>($"{dir}/info.json");
+            if (DynamicHelper.HasProperty(info, "Name"))
             {
-                dynamic timeColum = new System.Dynamic.ExpandoObject();
-                timeColum.text = "Time";
-                timeColum.type = "time";
-                timeColum.jsonvalue = "Time";
-                table.Columns.Add(timeColum);
-                using (StreamReader r = new StreamReader($"{dir}/table.json"))
+                return TypeData.Default; // voor oude data
+            }
+            var infoJSON = FileHelper.GetJson<GetInfoJson>($"{dir}/info.json");
+            return infoJSON.Type;
+        }
+
+        private Table GetTableKeyValue(string dir)
+        {
+            FileHelper.CheckDataFiles(dir);
+            var table = new Table {Type = "table", Rows = new List<dynamic>(), Columns = new List<dynamic>()};
+            dynamic timeColum = new ExpandoObject();
+            timeColum.text = "Time";
+            timeColum.type = "time";
+            timeColum.jsonvalue = "Time";
+            table.Columns.Add(timeColum);
+            var columns = FileHelper.GetJson<List<GetInfoTableJsonColumn>>($"{dir}/table.json");
+            //We geven alleen dag standen!
+            var dateData = DateTime.Today;
+            var keys = new List<string>();
+            foreach (var column in columns)
+            {
+                dynamic boolColumn = new ExpandoObject();
+                boolColumn.text = column.Text;
+                // We kennen geen bools in grafana
+                boolColumn.type = column.Type == "bool" ? "number" : column.Type;
+                boolColumn.jsonvalue = column.JsonValue;
+                table.Columns.Add(boolColumn);
+
+                // Data is altijd key, eerst alle keys ophalen
+                var todayDir = dateData.ToString("yyyy-MM-dd");
+                var filePath = $"{dir}/{column.JsonValue}/{todayDir}/data.json";
+                var items = new Dictionary<string, string>();
+                if (System.IO.File.Exists(filePath))
                 {
-                    string json = r.ReadToEnd();
-                    List<dynamic> columns = JsonConvert.DeserializeObject<List<dynamic>>(json);
-                    foreach (var column in columns)
-                    {
-                        // We kennen geen bools in grafana
-                        if (column.type == "bool")
-                        {
-                            dynamic boolColumn = new System.Dynamic.ExpandoObject();
-                            boolColumn.text = column.Text;
-                            boolColumn.type = "number";
-                            boolColumn.jsonvalue = column.JsonValue;
-                            table.Columns.Add(boolColumn);
-                        }
-                        else
-                        {
-                            dynamic column2 = new System.Dynamic.ExpandoObject();
-                            column2.text = column.Text;
-                            column2.type = column.Type;
-                            column2.jsonvalue = column.JsonValue;
-                            table.Columns.Add(column2);
-                        }
-                    }
+                    items = FileHelper.GetJson<Dictionary<string, string>>(filePath);
                 }
 
-                var dirPrograms = new DirectoryInfo(dir);
-                // laatste gegevens alleen weergeven in table
-                var enumerateDirectory = dirPrograms.EnumerateDirectories().Where(b => !IsDirectoryEmpty(b.FullName)).OrderByDescending(b => b.Name).First();
-                var dateData = GetDateTime(enumerateDirectory.Name);
-                using (StreamReader r = new StreamReader($"{enumerateDirectory.FullName}/data.json"))
+                foreach (var item in items)
                 {
-                    string json = r.ReadToEnd();
-                    List<JObject> items = JsonConvert.DeserializeObject<List<JObject>>(json);
-                    if (items != null)
+                    if (!keys.Contains(item.Key.ToLower()))
                     {
-                        foreach (var item in items)
-                        {
-                            var values = new List<dynamic>();
-                            foreach (var tableColumn in table.Columns)
-                            {
-                                if (tableColumn.jsonvalue == "Time")
-                                {
-                                    values.Add(GetTimeGrafana(dateData));
-                                }
-                                else
-                                {
-                                    // ophalen van item uit json
-                                    values.Add(GetValueOfDynamic(item.GetValue(tableColumn.jsonvalue.Value)));
-                                }
-                            }
-
-                            table.Rows.Add(values);
-                        }
+                        keys.Add(item.Key.ToLower());
                     }
                 }
             }
 
+            // op volgorde zetten
+            keys = keys.OrderBy(b => b).ToList();
+
+            foreach (var key in keys)
+            {
+                var values = new List<dynamic>();
+                foreach (var column in columns)
+                {
+                    if (column.JsonValue.ToLower() == "time")
+                    {
+                        // eerste kolom is Time, hierna doen we ook machine naam
+                        values.Add(GrafanaHelpers.GetTimeGrafana(dateData));                            
+                    }else if (column.JsonValue.ToLower() == "key")
+                    {
+                        values.Add(key);
+                    }
+                    else
+                    {
+                        var todayDir = dateData.ToString("yyyy-MM-dd");
+                        var filePath = $"{dir}/{column.JsonValue}/{todayDir}/data.json";
+                        var items = new JObject();
+                        if (System.IO.File.Exists(filePath))
+                        {
+                            items = FileHelper.GetJson<JObject>(filePath);
+                        }
+
+                        if (items.ContainsKey(key))
+                        {
+                            values.Add(GetValueOfDynamic(items[key]));
+                        }
+                        else
+                        {
+                            values.Add(GetDefaultValueOfDynamic(column.Type));
+                        }
+                    }
+                }
+
+                table.Rows.Add(values);
+            }
             return table;
         }
 
-        private DateTime GetDateTime(string x)
+        private Table GetTableDefault(string dir)
         {
-            var datetimeSplit = x.Split(" ");
+            FileHelper.CheckDataFiles(dir);
+            var table = new Table { Type = "table", Rows = new List<dynamic>(), Columns = new List<dynamic>() };
+            // We geven alleen het eerste query object terug bij type = table
+            // We weten niet of alle targets wel de zelfde kolommen hebben                        
+            // Eerste kolom is altijd een Time kolom
+            dynamic timeColum = new ExpandoObject();
+            timeColum.text = "Time";
+            timeColum.type = "time";
+            timeColum.jsonvalue = "Time";
+            table.Columns.Add(timeColum);
+            var columns = FileHelper.GetJson<List<GetInfoTableJsonColumn>>($"{dir}/table.json");
+            
+            foreach (var column in columns)
+            {
+                dynamic boolColumn = new ExpandoObject();
+                boolColumn.text = column.Text;
+                // We kennen geen bools in grafana
+                boolColumn.type = column.Type == "bool" ? "number" : column.Type;
+                boolColumn.jsonvalue = column.JsonValue;
+                table.Columns.Add(boolColumn);
+            }
+            
+
+            var dirPrograms = new DirectoryInfo(dir);
+            // laatste gegevens alleen weergeven in table
+            var enumerateDirectory = dirPrograms.EnumerateDirectories().Where(b => !IsDirectoryEmpty(b.FullName)).OrderByDescending(b => b.Name).First();
+            var dateData = GetDateTime(enumerateDirectory.Name);
+
+            // JObject, we weten niet hoe de kolomen heten real-time
+            var items = FileHelper.GetJson<List<JObject>>($"{enumerateDirectory.FullName}/data.json");
+            if (items != null)
+            {
+                foreach (var item in items)
+                {
+                    var values = new List<dynamic>();
+                    foreach (var tableColumn in table.Columns)
+                    {
+                        // Time kan je halen uit de directory naam
+                        values.Add(
+                            tableColumn.jsonvalue == "Time"
+                                ? GrafanaHelpers.GetTimeGrafana(dateData)
+                                : GetValueOfDynamic(item.GetValue(tableColumn.jsonvalue)));
+                    }
+
+                    table.Rows.Add(values);
+                }                    
+            }
+            
+
+            return table;
+        }
+
+        private DateTime GetDateTime(string directoryName)
+        {
+            // van directory naam weer terug naar een datetime
+            var datetimeSplit = directoryName.Split(" ");
             var dateStrings = datetimeSplit[0].Split("-");
             var timeStrings = datetimeSplit[1].Split("_");
             var dateData = new DateTime(Int32.Parse(dateStrings[0]), Int32.Parse(dateStrings[1]),
@@ -197,14 +300,14 @@
             return dateData;
         }
 
-        private string GetName(string dir)
+        private string GetDescription(string dir)
         {
-            using (StreamReader r = new StreamReader($"{dir}/info.json"))
+            dynamic info = FileHelper.GetJson<dynamic>($"{dir}/info.json");
+            if (DynamicHelper.HasProperty(info, "Name"))
             {
-                string json = r.ReadToEnd();
-                dynamic data = JsonConvert.DeserializeObject<dynamic>(json);
-                return data.Name;
+                return info.Name; // voor oude data
             }
+            return info.Description;
         }
 
         private TimeSerie GetTimeSerie(string name, string dir)
@@ -215,23 +318,19 @@
             foreach (var enumerateDirectory in dirPrograms.EnumerateDirectories().Where(b => !IsDirectoryEmpty(b.FullName)).OrderBy(b => b.Name))
             {
                 var dateData = GetDateTime(enumerateDirectory.Name);
-                using (StreamReader r = new StreamReader($"{enumerateDirectory.FullName}/data.json"))
+                var items = FileHelper.GetJson<List<dynamic>>($"{dir}/data.json");
+
+                if (items.Count != 0)
                 {
-                    string json = r.ReadToEnd();
-                    List<dynamic> items = JsonConvert.DeserializeObject<List<dynamic>>(json);
-                    if (!string.IsNullOrEmpty(json))
-                    {
-                        floatList.Add(new float[] {items.Count, GetTimeGrafana(dateData) });
-                    }
-                    else
-                    {
-                        floatList.Add(new float[] { 0, GetTimeGrafana(dateData) });
-                    }
+                    floatList.Add(new[] {items.Count, GrafanaHelpers.GetTimeGrafana(dateData) });
+                }
+                else
+                {
+                    floatList.Add(new[] { 0, GrafanaHelpers.GetTimeGrafana(dateData) });
                 }
             }
 
-            return new TimeSerie
-                {Target = name, Datapoints = floatList};
+            return new TimeSerie {Target = name, Datapoints = floatList};
         }
     }
 }

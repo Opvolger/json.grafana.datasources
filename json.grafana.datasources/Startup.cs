@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Json.Grafana.DataSources
 {
     using Controllers;
+    using Logic;
     using Swashbuckle.AspNetCore.Swagger;
 
     public class Startup
@@ -24,8 +25,11 @@ namespace Json.Grafana.DataSources
         public void ConfigureServices(IServiceCollection services)
         {
             var appSettings = Configuration.GetSection("AppSettings").Get<AppSettings>();
-            HomeController.Settings = appSettings;
-            SimpelJsonController.Settings = appSettings;
+            
+            services.AddScoped<ITableData, TableData>();
+            services.AddScoped<IKeyValueData, KeyValueData>();
+            services.AddSingleton<IPathServices>(b => new PathServices(appSettings));
+
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             services.AddSwaggerGen(c =>

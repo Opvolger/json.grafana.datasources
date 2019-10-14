@@ -2,21 +2,31 @@
 {
     using System.Collections.Generic;
 
+
     public class GetInfo
     {
         public string Name { get; set; }
 
-        public GetInfoInfo Info { get; set; }
+        public GetInfoJson Info { get; set; }
 
-        public List<GetInfoTableColumn> Table { get; set; }
+        public List<GetInfoTableJsonColumn> Table { get; set; }
     }
 
-    public class GetInfoInfo
+    public class GetInfoJson
     {
-        public string Name { get; set; }
+        // Vroeger stond hier Name!
+        public string Description { get; set; }
+
+        public TypeData Type { get; set; }
     }
 
-    public class GetInfoTableColumn
+    public enum TypeData
+    {
+        Default,
+        KeyValue
+    }
+
+    public class GetInfoTableJsonColumn
     {
         public string JsonValue { get; set; }
 
