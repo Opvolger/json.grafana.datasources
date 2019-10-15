@@ -41,7 +41,7 @@
         [HttpPost]
         public IActionResult SetInfo([FromBody] GetInfo value)
         {
-            var docPath = pathServices.GetNamePath(value.Name, true);
+            var docPath = pathServices.GetNamePath(value.Name, null,true);
             FileHelper.SaveJson(Path.Combine(docPath, "table.json"), value.Table, Formatting.Indented);
             FileHelper.SaveJson(Path.Combine(docPath, "info.json"), value.Info, Formatting.Indented);
             return StatusCode((int)HttpStatusCode.OK);
