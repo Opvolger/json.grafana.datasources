@@ -21,6 +21,13 @@
             this.pathServices = pathServices;
         }
 
+        [HttpGet]
+        [Route("")]
+        public ActionResult<string> Get()
+        {
+            return "Hack the planet!";
+        }
+
         [Produces("application/json")]
         [Route("search")]
         [HttpPost]
@@ -144,13 +151,19 @@
 
         private TypeData GetTypeData(string dir)
         {
-            dynamic info = FileHelper.GetJson<dynamic>($"{dir}/info.json");
-            if (DynamicHelper.HasProperty(info, "Name"))
+            if (System.IO.File.Exists($"{dir}/info.json"))
             {
-                return TypeData.Default; // voor oude data
+                dynamic info = FileHelper.GetJson<dynamic>($"{dir}/info.json");
+                if (DynamicHelper.HasProperty(info, "Name"))
+                {
+                    return TypeData.Default; // voor oude data
+                }
+
+                var infoJSON = FileHelper.GetJson<GetInfoJson>($"{dir}/info.json");
+                return infoJSON.Type;
             }
-            var infoJSON = FileHelper.GetJson<GetInfoJson>($"{dir}/info.json");
-            return infoJSON.Type;
+
+            return TypeData.Default;
         }
 
         private Table GetTableKeyValue(string dir)
@@ -168,12 +181,12 @@
             var keys = new List<string>();
             foreach (var column in columns)
             {
-                dynamic boolColumn = new ExpandoObject();
-                boolColumn.text = column.Text;
+                dynamic expandoObject = new ExpandoObject();
+                expandoObject.text = column.Text;
                 // We kennen geen bools in grafana
-                boolColumn.type = column.Type == "bool" ? "number" : column.Type;
-                boolColumn.jsonvalue = column.JsonValue;
-                table.Columns.Add(boolColumn);
+                expandoObject.type = column.Type == "bool" ? "number" : column.Type;
+                expandoObject.jsonvalue = column.JsonValue;
+                table.Columns.Add(expandoObject);
 
                 // Data is altijd key, eerst alle keys ophalen
                 var todayDir = dateData.ToString("yyyy-MM-dd");
@@ -199,13 +212,11 @@
             foreach (var key in keys)
             {
                 var values = new List<dynamic>();
+                // eerste kolom is Time, hierna doen we ook machine naam
+                values.Add(GrafanaHelpers.GetTimeGrafana(dateData));
                 foreach (var column in columns)
                 {
-                    if (column.JsonValue.ToLower() == "time")
-                    {
-                        // eerste kolom is Time, hierna doen we ook machine naam
-                        values.Add(GrafanaHelpers.GetTimeGrafana(dateData));                            
-                    }else if (column.JsonValue.ToLower() == "key")
+                    if (column.JsonValue.ToLower() == "key")
                     {
                         values.Add(key);
                     }
