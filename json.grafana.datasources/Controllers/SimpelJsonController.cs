@@ -170,15 +170,11 @@
         {
             FileHelper.CheckDataFiles(dir);
             var table = new Table {Type = "table", Rows = new List<dynamic>(), Columns = new List<dynamic>()};
-            dynamic timeColum = new ExpandoObject();
-            timeColum.text = "Time";
-            timeColum.type = "time";
-            timeColum.jsonvalue = "Time";
-            table.Columns.Add(timeColum);
             var columns = FileHelper.GetJson<List<GetInfoTableJsonColumn>>($"{dir}/table.json");
             //We geven alleen dag standen!
             var dateData = DateTime.Today;
             var keys = new List<string>();
+            var todayDir = dateData.ToString("yyyy-MM-dd");
             foreach (var column in columns)
             {
                 dynamic expandoObject = new ExpandoObject();
@@ -187,9 +183,7 @@
                 expandoObject.type = column.Type == "bool" ? "number" : column.Type;
                 expandoObject.jsonvalue = column.JsonValue;
                 table.Columns.Add(expandoObject);
-
-                // Data is altijd key, eerst alle keys ophalen
-                var todayDir = dateData.ToString("yyyy-MM-dd");
+                                
                 var filePath = $"{dir}/{column.JsonValue}/{todayDir}/data.json";
                 var items = new Dictionary<string, string>();
                 if (System.IO.File.Exists(filePath))
@@ -212,8 +206,6 @@
             foreach (var key in keys)
             {
                 var values = new List<dynamic>();
-                // eerste kolom is Time, hierna doen we ook machine naam
-                values.Add(GrafanaHelpers.GetTimeGrafana(dateData));
                 foreach (var column in columns)
                 {
                     if (column.JsonValue.ToLower() == "key")
@@ -221,8 +213,7 @@
                         values.Add(key);
                     }
                     else
-                    {
-                        var todayDir = dateData.ToString("yyyy-MM-dd");
+                    {                        
                         var filePath = $"{dir}/{column.JsonValue}/{todayDir}/data.json";
                         var items = new JObject();
                         if (System.IO.File.Exists(filePath))

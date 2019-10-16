@@ -26,8 +26,6 @@ namespace Json.Grafana.DataSources
         {
             var appSettings = Configuration.GetSection("AppSettings").Get<AppSettings>();
             
-            services.AddScoped<ITableData, TableData>();
-            services.AddScoped<IKeyValueData, KeyValueData>();
             services.AddSingleton<IPathServices>(b => new PathServices(appSettings));
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
