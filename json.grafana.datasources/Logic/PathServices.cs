@@ -28,19 +28,21 @@
                     Directory.CreateDirectory(docPath);
                 }
             }
-            if (subject != null && (subject.StartsWith('.') || subject.Contains('/')))
+            if (subject != null)
             {
-                throw new Exception("invalid subject");
-            }
-            docPath = Path.Combine(docPath, subject);
-            if (create)
-            {
-                if (!Directory.Exists(docPath))
+                if ((subject.StartsWith('.') || subject.Contains('/')))
                 {
-                    Directory.CreateDirectory(docPath);
+                    throw new Exception("invalid subject");
+                }
+                docPath = Path.Combine(docPath, subject);
+                if (create)
+                {
+                    if (!Directory.Exists(docPath))
+                    {
+                        Directory.CreateDirectory(docPath);
+                    }
                 }
             }
-
 
             return docPath;
         }
