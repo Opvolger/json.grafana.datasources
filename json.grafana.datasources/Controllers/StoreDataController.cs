@@ -54,7 +54,7 @@
             {
                 string fullPath = pathServices.CreateDateTimePath(data.Name, true);
                 // controle op geldige json
-                JsonConvert.DeserializeObject(data.Json_Data.ToString());
+                JsonConvert.DeserializeObject<List<dynamic>>(data.Json_Data.ToString());
                 FileHelper.SaveJson(Path.Combine(fullPath, "data.json"), data.Json_Data);
                 return StatusCode((int)HttpStatusCode.OK);
             }
