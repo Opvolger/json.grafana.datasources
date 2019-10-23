@@ -23,7 +23,6 @@
         [Produces("application/json")]
         [HttpGet]
         [Route("{name}")]
-        [Route("{id}")] // voor oude code
         public ActionResult<GetInfo> Get(string name)
         {
             var response = new GetInfo{Name = name };
