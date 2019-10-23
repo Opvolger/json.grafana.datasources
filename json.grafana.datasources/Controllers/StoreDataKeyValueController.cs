@@ -49,14 +49,14 @@
 
         [Route("send_data")]
         [HttpPost]
-        public IActionResult SendData([FromBody] dynamic value)
+        public IActionResult SendData([FromBody] SendKeyValueData data)
         {
             try
             {
-                string fullPath = pathServices.CreateToDayPath(value.name.Value, value.subject.Value, true);
+                string fullPath = pathServices.CreateToDayPath(data.Name, data.Subject, true);
                 // controle op geldige json
-                JsonConvert.DeserializeObject<JObject>(value.json_data.ToString());
-                FileHelper.SaveJson(Path.Combine(fullPath, "data.json"), value.json_data);
+                JsonConvert.DeserializeObject<JObject>(data.Json_Data.ToString());
+                FileHelper.SaveJson(Path.Combine(fullPath, "data.json"), data.Json_Data.json_data);
                 return StatusCode((int)HttpStatusCode.OK);
             }
             catch (Exception e)

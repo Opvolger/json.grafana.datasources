@@ -2,6 +2,21 @@
 {
     using System.Collections.Generic;
 
+    public class SendData
+    {
+        public string Name { get; set; }
+
+        public dynamic Json_Data { get; set; }
+    }
+
+    public class SendKeyValueData
+    {
+        public string Name { get; set; }
+
+        public string Subject { get; set; }
+
+        public dynamic Json_Data { get; set; }
+    }
 
     public class GetInfo
     {
