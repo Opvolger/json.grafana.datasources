@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Json.Grafana.DataSources
 {
-    using Controllers;
     using Logic;
     using Swashbuckle.AspNetCore.Swagger;
 
