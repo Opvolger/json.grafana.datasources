@@ -6,16 +6,12 @@
     {
         public string Name { get; set; }
 
-        public dynamic Json_Data { get; set; }
+        public dynamic Json_data { get; set; }
     }
 
-    public class SendKeyValueData
+    public class SendKeyValueData : SendData
     {
-        public string Name { get; set; }
-
         public string Subject { get; set; }
-
-        public dynamic Json_Data { get; set; }
     }
 
     public class GetInfo
@@ -27,9 +23,17 @@
         public List<GetInfoTableJsonColumn> Table { get; set; }
     }
 
-    public class GetInfoJson
+    public class JsonExport
     {
-        // Vroeger stond hier Name!
+        public string Name { get; set; }
+
+        public Table Json_data { get; set; }
+
+        public GetInfoJson Info { get; set; }
+    }
+
+    public class GetInfoJson
+    {        
         public string Description { get; set; }
 
         public TypeData Type { get; set; }

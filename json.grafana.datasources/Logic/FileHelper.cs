@@ -2,6 +2,7 @@
 {
     using System;
     using System.IO;
+    using System.Linq;
     using Newtonsoft.Json;
 
     public static class FileHelper
@@ -20,6 +21,11 @@
                     throw new Exception($"info.json or table.json not found in dir {dir}, use storedata/set_info");
                 }
             }
+        }
+
+        public static bool IsDirectoryEmpty(string path)
+        {
+            return !Directory.EnumerateFileSystemEntries(path).Any();
         }
 
         public static T GetJson<T>(string filePath)

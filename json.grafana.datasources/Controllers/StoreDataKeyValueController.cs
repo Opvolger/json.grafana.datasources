@@ -55,8 +55,8 @@
             {
                 string fullPath = pathServices.CreateToDayPath(data.Name, data.Subject, true);
                 // controle op geldige json
-                JsonConvert.DeserializeObject<JObject>(data.Json_Data.ToString());
-                FileHelper.SaveJson(Path.Combine(fullPath, "data.json"), data.Json_Data);
+                JsonConvert.DeserializeObject<JObject>(data.Json_data.ToString());
+                FileHelper.SaveJson(Path.Combine(fullPath, "data.json"), data.Json_data);
                 return StatusCode((int)HttpStatusCode.OK);
             }
             catch (Exception e)

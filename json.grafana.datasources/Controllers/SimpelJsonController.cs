@@ -101,7 +101,7 @@
                 var dirPrograms = new DirectoryInfo(docPath);
 
                 foreach (var enumerateDirectory in dirPrograms.EnumerateDirectories()
-                    .Where(b => !IsDirectoryEmpty(b.FullName)).OrderBy(b => b.Name))
+                    .Where(b => !FileHelper.IsDirectoryEmpty(b.FullName)).OrderBy(b => b.Name))
                 {
                     if (Directory.Exists(enumerateDirectory.FullName) &&
                         System.IO.File.Exists($"{enumerateDirectory.FullName}/info.json"))
@@ -133,7 +133,8 @@
                         case TypeData.KeyValue:
                             if (target.type == "table")
                             {
-                                response.Add(GetTableKeyValue(dir));
+                                var dateData = DateTime.Today;
+                                response.Add(GetTableKeyValue(dir, dateData));
                             }
                             // TODO
                             break;
@@ -142,11 +143,6 @@
             }
 
             return new ActionResult<dynamic>(response);
-        }
-
-        private bool IsDirectoryEmpty(string path)
-        {
-            return !Directory.EnumerateFileSystemEntries(path).Any();
         }
 
         private TypeData GetTypeData(string dir)
@@ -166,13 +162,12 @@
             return TypeData.Default;
         }
 
-        private Table GetTableKeyValue(string dir)
+        public static Table GetTableKeyValue(string dir, DateTime dateData)
         {
             FileHelper.CheckDataFiles(dir);
             var table = new Table {Type = "table", Rows = new List<dynamic>(), Columns = new List<dynamic>()};
             var columns = FileHelper.GetJson<List<GetInfoTableJsonColumn>>($"{dir}/table.json");
-            //We geven alleen dag standen!
-            var dateData = DateTime.Today;
+            //We geven alleen dag standen!            
             var keys = new List<string>();
             var todayDir = dateData.ToString("yyyy-MM-dd");
             foreach (var column in columns)
@@ -237,7 +232,7 @@
             return table;
         }
 
-        private Table GetTableDefault(string dir)
+        public static Table GetTableDefault(string dir)
         {
             FileHelper.CheckDataFiles(dir);
             var table = new Table { Type = "table", Rows = new List<dynamic>(), Columns = new List<dynamic>() };
@@ -264,7 +259,7 @@
 
             var dirPrograms = new DirectoryInfo(dir);
             // laatste gegevens alleen weergeven in table
-            var enumerateDirectory = dirPrograms.EnumerateDirectories().Where(b => !IsDirectoryEmpty(b.FullName)).OrderByDescending(b => b.Name).First();
+            var enumerateDirectory = dirPrograms.EnumerateDirectories().Where(b => !FileHelper.IsDirectoryEmpty(b.FullName)).OrderByDescending(b => b.Name).First();
             var dateData = GetDateTime(enumerateDirectory.Name);
 
             // JObject, we weten niet hoe de kolomen heten real-time
@@ -291,7 +286,7 @@
             return table;
         }
 
-        private DateTime GetDateTime(string directoryName)
+        private static DateTime GetDateTime(string directoryName)
         {
             // van directory naam weer terug naar een datetime
             var datetimeSplit = directoryName.Split(" ");
@@ -317,7 +312,7 @@
             Console.WriteLine(dir);
             var dirPrograms = new DirectoryInfo(dir);
             var floatList = new List<float[]>();
-            foreach (var enumerateDirectory in dirPrograms.EnumerateDirectories().Where(b => !IsDirectoryEmpty(b.FullName)).OrderBy(b => b.Name))
+            foreach (var enumerateDirectory in dirPrograms.EnumerateDirectories().Where(b => !FileHelper.IsDirectoryEmpty(b.FullName)).OrderBy(b => b.Name))
             {
                 var dateData = GetDateTime(enumerateDirectory.Name);
                 var items = FileHelper.GetJson<List<dynamic>>($"{dir}/data.json");

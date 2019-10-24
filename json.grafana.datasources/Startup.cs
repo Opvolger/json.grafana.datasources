@@ -27,7 +27,13 @@ namespace Json.Grafana.DataSources
             
             services.AddSingleton<IPathServices>(b => new PathServices(appSettings));
 
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2).AddJsonOptions(
+                options =>
+                {
+                    options.SerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
+                    options.SerializerSettings.ContractResolver
+                        = new Newtonsoft.Json.Serialization.DefaultContractResolver();
+                });
 
             services.AddSwaggerGen(c =>
             {
