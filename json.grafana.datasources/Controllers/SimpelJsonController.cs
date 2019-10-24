@@ -64,7 +64,7 @@
 
             if (type == TypeDataColumn.DateTime)
             {
-                return GrafanaHelpers.GetTimeGrafana(DateTime.MinValue);
+                return null;
             }
 
 
@@ -78,9 +78,9 @@
                 return b ? 1 : 0;
             }
 
-            if (value.Value is DateTime c)
+            if (value.Value is DateTime date)
             {
-                return GrafanaHelpers.GetTimeGrafana(c);
+                return date.GetTimeGrafana();
             }
             return value.Value;
         }
@@ -128,7 +128,7 @@
                         case TypeData.Default:
                             if (target.type == "table")
                             {
-                                response.Add(GetTableDefault(dir));
+                                response.Add(GetTableDefault(dir, GetValueOfDynamic, GetDefaultValueOfDynamic, true));
                             }
                             else
                             {
@@ -139,7 +139,7 @@
                             if (target.type == "table")
                             {
                                 var dateData = DateTime.Today;
-                                response.Add(GetTableKeyValue(dir, dateData));
+                                response.Add(GetTableKeyValue(dir, dateData, GetValueOfDynamic, GetDefaultValueOfDynamic, true));
                             }
                             // TODO
                             break;
@@ -161,7 +161,8 @@
             return TypeData.Default;
         }
 
-        public static Table GetTableKeyValue(string dir, DateTime dateData)
+        public static Table GetTableKeyValue(string dir, DateTime dateData, Func<dynamic, dynamic> getValueOfDynamic,
+            Func<TypeDataColumn, dynamic> getDefaultValueOfDynamic, bool boolToNumber)
         {
             FileHelper.CheckDataFiles(dir);
             var table = new Table {Type = "table", Rows = new List<dynamic>(), Columns = new List<InfoJsonColumn>()};
@@ -171,10 +172,8 @@
             var todayDir = dateData.ToString("yyyy-MM-dd");
             foreach (var column in columns)
             {
-                // We kennen geen bools in grafana
-                column.Type = column.Type == TypeDataColumn.Bool ? TypeDataColumn.Number : column.Type;
                 table.Columns.Add(column);
-                                
+
                 var filePath = $"{dir}/{column.JsonValue}/{todayDir}/data.json";
                 var items = new Dictionary<string, string>();
                 if (System.IO.File.Exists(filePath))
@@ -204,7 +203,7 @@
                         values.Add(key);
                     }
                     else
-                    {                        
+                    {
                         var filePath = $"{dir}/{column.JsonValue}/{todayDir}/data.json";
                         var items = new JObject();
                         if (System.IO.File.Exists(filePath))
@@ -214,21 +213,25 @@
 
                         if (items.ContainsKey(key))
                         {
-                            values.Add(GetValueOfDynamic(items[key]));
+                            values.Add(getValueOfDynamic(items[key]));
                         }
                         else
                         {
-                            values.Add(GetDefaultValueOfDynamic(column.Type));
+                            values.Add(getDefaultValueOfDynamic(column.Type));
                         }
                     }
                 }
 
                 table.Rows.Add(values);
             }
+
+            columns.BoolToNumber(boolToNumber);
+
             return table;
         }
 
-        public static Table GetTableDefault(string dir)
+        public static Table GetTableDefault(string dir, Func<dynamic, dynamic> getValueOfDynamic,
+            Func<TypeDataColumn, dynamic> getDefaultValueOfDynamic, bool boolToNumber)
         {
             FileHelper.CheckDataFiles(dir);
             var table = new Table { Type = "table", Rows = new List<dynamic>(), Columns = new List<InfoJsonColumn>() };
@@ -241,14 +244,8 @@
             timeColum.JsonValue = "Time";
             table.Columns.Add(timeColum);
             var columns = FileHelper.GetJson<List<InfoJsonColumn>>($"{dir}/table.json");
-            
-            foreach (var column in columns)
-            {
-                // We kennen geen bools in grafana
-                column.Type = column.Type == TypeDataColumn.Bool ? TypeDataColumn.Number : column.Type;                
-                table.Columns.Add(column);
-            }
-            
+
+            table.Columns.AddRange(columns);            
 
             var dirPrograms = new DirectoryInfo(dir);
             // laatste gegevens alleen weergeven in table
@@ -267,17 +264,20 @@
                         // Time kan je halen uit de directory naam
                         values.Add(
                             tableColumn.JsonValue == "Time"
-                                ? GrafanaHelpers.GetTimeGrafana(dateData)
-                                : GetValueOfDynamic(item.GetValue(tableColumn.JsonValue)));
+                                ? getValueOfDynamic(dateData)
+                                : getValueOfDynamic(item.GetValue(tableColumn.JsonValue)));
                     }
 
                     table.Rows.Add(values);
                 }                    
             }
-            
+
+            columns.BoolToNumber(boolToNumber);
 
             return table;
         }
+
+
 
         private static DateTime GetDateTime(string directoryName)
         {
@@ -308,11 +308,11 @@
 
                 if (items.Count != 0)
                 {
-                    floatList.Add(new[] {items.Count, GrafanaHelpers.GetTimeGrafana(dateData) });
+                    floatList.Add(new[] {items.Count, dateData.GetTimeGrafana() });
                 }
                 else
                 {
-                    floatList.Add(new[] { 0, GrafanaHelpers.GetTimeGrafana(dateData) });
+                    floatList.Add(new[] { 0, dateData.GetTimeGrafana() });
                 }
             }
 

@@ -108,12 +108,37 @@
             // We halen de data net zo op alsof het een uitvraag is van grafana
             if (info.Type == TypeData.KeyValue)
             {
-                return SimpelJsonController.GetTableKeyValue(docPath, date);
+                return SimpelJsonController.GetTableKeyValue(docPath, date, GetValueOfDynamic, GetDefaultValueOfDynamic, false);
             }
             else
             {
-                return SimpelJsonController.GetTableDefault(docPath);
+                return SimpelJsonController.GetTableDefault(docPath, GetValueOfDynamic, GetDefaultValueOfDynamic, false);
             }
+        }
+
+        public static dynamic GetDefaultValueOfDynamic(TypeDataColumn type)
+        {
+            if (type == TypeDataColumn.Bool)
+            {
+                dynamic value = false;
+                return value;
+            }
+
+            if (type == TypeDataColumn.DateTime)
+            {
+                return null;
+            }
+
+            return string.Empty;
+        }
+
+        public static dynamic GetValueOfDynamic(dynamic value)
+        {
+            if (value.Value is DateTime c)
+            {
+                return c.ToString("yyyy-MM-dd HH:mm:ss");
+            }
+            return value.Value;
         }
 
         private IActionResult DownloadResponse(string data_string, string fileName)
