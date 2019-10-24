@@ -19,6 +19,7 @@
             this.pathServices = pathServices;
         }
 
+        // TODO Datum als string!
         [HttpGet]
         [Route("json/{name}/{date}")]
         public ActionResult<JsonExport> GetJSON(string name, DateTime? date)
@@ -39,6 +40,7 @@
             return response;
         }
 
+        // TODO Datum als string!
         [HttpGet]
         [Route("csv/{name}/{date}")]
         public IActionResult GetCSV(string name, DateTime? date)
@@ -79,7 +81,14 @@
                     {
                         // waarde toevoegen maar als ; voorkomt in de waarde vervangen voor .
                         // We scheide de waardes op ;
-                        csvrow = csvrow + keyvalue.ToString().Replace(";", ".") + ";";
+                        if (keyvalue == null)
+                        {
+                            csvrow = csvrow + ";";
+                        }
+                        else
+                        {
+                            csvrow = csvrow + keyvalue.ToString().Replace(";", ".") + ";";
+                        }                        
                     }
 
                     // laatste punt-komma weg
