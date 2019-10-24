@@ -29,7 +29,7 @@
             string docPath = pathServices.GetNamePath(name);
             if (Directory.Exists(docPath))
             {
-                response.Table = FileHelper.GetJson<List<GetInfoTableJsonColumn>>(Path.Combine(docPath, "table.json"));
+                response.Table = FileHelper.GetJson<List<InfoJsonColumn>>(Path.Combine(docPath, "table.json"));
                 response.Info = FileHelper.GetJson<GetInfoJson>(Path.Combine(docPath, "info.json"));
                 return response;
             }

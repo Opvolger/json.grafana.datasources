@@ -2,13 +2,14 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Dynamic;
     using System.IO;
     using System.Linq;
     using Logic;
     using Microsoft.AspNetCore.Mvc;
     using Models;
     using Newtonsoft.Json.Linq;
+
+    // Meer info kijk op https://github.com/grafana/simple-json-datasource/
 
     [Route("simpeljson")]
     [ApiController]
@@ -54,14 +55,14 @@
             return null;
         }
 
-        public static dynamic GetDefaultValueOfDynamic(string type)
+        public static dynamic GetDefaultValueOfDynamic(TypeDataColumn type)
         {
-            if (type == "bool")
+            if (type == TypeDataColumn.Bool)
             {
                 return 0;
             }
 
-            if (type == "DateTime")
+            if (type == TypeDataColumn.DateTime)
             {
                 return GrafanaHelpers.GetTimeGrafana(DateTime.MinValue);
             }
@@ -84,11 +85,15 @@
             return value.Value;
         }
 
-
+        // multi response kan wel met nswag:
+        // https://blog.dangl.me/archive/different-response-schemas-in-aspnet-core-swagger-api-definition-with-nswag/
         [Produces("application/json")]
-        [Route("query")]
+        [Route("query")]        
+        [ProducesResponseType(typeof(List<TimeSerie>), 200)] // Helaas werkt dit niet.. :(
+        [ProducesResponseType(typeof(List<Table>), 200)]        
+        [ProducesResponseType(500)]
         [HttpPost]
-        public ActionResult<dynamic> Query([FromBody] dynamic value)
+        public ActionResult<List<QueryResponse>> Query([FromBody] dynamic value)
         {
             string docPath = pathServices.DirectoryGrafanaJSON;
             dynamic data = value;
@@ -142,19 +147,13 @@
                 }
             }
 
-            return new ActionResult<dynamic>(response);
+            return response;
         }
 
         private TypeData GetTypeData(string dir)
         {
             if (System.IO.File.Exists($"{dir}/info.json"))
             {
-                dynamic info = FileHelper.GetJson<dynamic>($"{dir}/info.json");
-                if (DynamicHelper.HasProperty(info, "Name"))
-                {
-                    return TypeData.Default; // voor oude data
-                }
-
                 var infoJSON = FileHelper.GetJson<GetInfoJson>($"{dir}/info.json");
                 return infoJSON.Type;
             }
@@ -165,19 +164,16 @@
         public static Table GetTableKeyValue(string dir, DateTime dateData)
         {
             FileHelper.CheckDataFiles(dir);
-            var table = new Table {Type = "table", Rows = new List<dynamic>(), Columns = new List<dynamic>()};
-            var columns = FileHelper.GetJson<List<GetInfoTableJsonColumn>>($"{dir}/table.json");
+            var table = new Table {Type = "table", Rows = new List<dynamic>(), Columns = new List<InfoJsonColumn>()};
+            var columns = FileHelper.GetJson<List<InfoJsonColumn>>($"{dir}/table.json");
             //We geven alleen dag standen!            
             var keys = new List<string>();
             var todayDir = dateData.ToString("yyyy-MM-dd");
             foreach (var column in columns)
             {
-                dynamic expandoObject = new ExpandoObject();
-                expandoObject.text = column.Text;
                 // We kennen geen bools in grafana
-                expandoObject.type = column.Type == "bool" ? "number" : column.Type;
-                expandoObject.jsonvalue = column.JsonValue;
-                table.Columns.Add(expandoObject);
+                column.Type = column.Type == TypeDataColumn.Bool ? TypeDataColumn.Number : column.Type;
+                table.Columns.Add(column);
                                 
                 var filePath = $"{dir}/{column.JsonValue}/{todayDir}/data.json";
                 var items = new Dictionary<string, string>();
@@ -235,25 +231,22 @@
         public static Table GetTableDefault(string dir)
         {
             FileHelper.CheckDataFiles(dir);
-            var table = new Table { Type = "table", Rows = new List<dynamic>(), Columns = new List<dynamic>() };
+            var table = new Table { Type = "table", Rows = new List<dynamic>(), Columns = new List<InfoJsonColumn>() };
             // We geven alleen het eerste query object terug bij type = table
             // We weten niet of alle targets wel de zelfde kolommen hebben                        
             // Eerste kolom is altijd een Time kolom
-            dynamic timeColum = new ExpandoObject();
-            timeColum.text = "Time";
-            timeColum.type = "time";
-            timeColum.jsonvalue = "Time";
+            var timeColum = new InfoJsonColumn();
+            timeColum.Text = "Time";
+            timeColum.Type = TypeDataColumn.DateTime;
+            timeColum.JsonValue = "Time";
             table.Columns.Add(timeColum);
-            var columns = FileHelper.GetJson<List<GetInfoTableJsonColumn>>($"{dir}/table.json");
+            var columns = FileHelper.GetJson<List<InfoJsonColumn>>($"{dir}/table.json");
             
             foreach (var column in columns)
             {
-                dynamic boolColumn = new ExpandoObject();
-                boolColumn.text = column.Text;
                 // We kennen geen bools in grafana
-                boolColumn.type = column.Type == "bool" ? "number" : column.Type;
-                boolColumn.jsonvalue = column.JsonValue;
-                table.Columns.Add(boolColumn);
+                column.Type = column.Type == TypeDataColumn.Bool ? TypeDataColumn.Number : column.Type;                
+                table.Columns.Add(column);
             }
             
 
@@ -273,9 +266,9 @@
                     {
                         // Time kan je halen uit de directory naam
                         values.Add(
-                            tableColumn.jsonvalue == "Time"
+                            tableColumn.JsonValue == "Time"
                                 ? GrafanaHelpers.GetTimeGrafana(dateData)
-                                : GetValueOfDynamic(item.GetValue(tableColumn.jsonvalue)));
+                                : GetValueOfDynamic(item.GetValue(tableColumn.JsonValue)));
                     }
 
                     table.Rows.Add(values);
@@ -299,11 +292,7 @@
 
         private string GetDescription(string dir)
         {
-            dynamic info = FileHelper.GetJson<dynamic>($"{dir}/info.json");
-            if (DynamicHelper.HasProperty(info, "Name"))
-            {
-                return info.Name; // voor oude data
-            }
+            var info = FileHelper.GetJson<GetInfoJson>($"{dir}/info.json");
             return info.Description;
         }
 
