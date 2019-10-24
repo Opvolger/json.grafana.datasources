@@ -31,8 +31,6 @@ namespace Json.Grafana.DataSources
                 options =>
                 {
                     options.SerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
-                    options.SerializerSettings.ContractResolver
-                        = new Newtonsoft.Json.Serialization.DefaultContractResolver();
                 });
 
             services.AddSwaggerGen(c =>
