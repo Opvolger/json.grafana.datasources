@@ -306,7 +306,7 @@
                 var dateData = GetDateTime(enumerateDirectory.Name);
                 var items = FileHelper.GetJson<List<dynamic>>($"{enumerateDirectory}/data.json");
 
-                if (items.Count != 0)
+                if (items != null && items.Count != 0)
                 {
                     floatList.Add(new[] {items.Count, dateData.GetTimeGrafana() });
                 }
