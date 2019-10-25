@@ -73,16 +73,16 @@
 
         public static dynamic GetValueOfDynamic(dynamic value)
         {
-            if (value.Value is bool b)
+            if (value is bool b)
             {
                 return b ? 1 : 0;
             }
 
-            if (value.Value is DateTime date)
+            if (value is DateTime date)
             {
                 return date.GetTimeGrafana();
             }
-            return value.Value;
+            return value;
         }
 
         // multi response kan wel met nswag:
