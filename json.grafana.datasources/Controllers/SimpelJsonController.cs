@@ -304,7 +304,7 @@
             foreach (var enumerateDirectory in dirPrograms.EnumerateDirectories().Where(b => !FileHelper.IsDirectoryEmpty(b.FullName)).OrderBy(b => b.Name))
             {
                 var dateData = GetDateTime(enumerateDirectory.Name);
-                var items = FileHelper.GetJson<List<dynamic>>($"{dir}/data.json");
+                var items = FileHelper.GetJson<List<dynamic>>($"{enumerateDirectory}/data.json");
 
                 if (items.Count != 0)
                 {
