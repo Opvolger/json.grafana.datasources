@@ -3,7 +3,7 @@
 Deze tool is ontstaan omdat ik op mijn werk in grafana een dashboard wilde hebben uit verschillende bronnen welke elke nacht geupdaten moet worden.
 We hadden 3 waarheden en deze tool maakte een overzicht of al deze waarheden nog overeenkwamen.
 
-Met deze tool is het mogelijk om onder een noemer (in ons geval een landschap) key-value lijsten te voor een kolom te sturen. De keys worden bij elkaar gezet en de values worden in een kolom gezet. Een voorbeeld:
+Met deze tool is het mogelijk om onder een noemer (in ons geval een landschap) key-value lijsten op te sturen. De keys worden bij elkaar gezet en de values worden in een kolom gezet. Een voorbeeld:
 
 input:
 
