@@ -40,3 +40,5 @@ geeft voor noemer TEST als output (mits geconfigureerd):
 | abc-003  | 1 | C | 17 |
 | abc-004  | 2 | C | 12 |
 | abc-005  | 2 |   | 12 |
+
+Dit is een voorbeeld van 1 noemer. maar je kan er dus meerdere hebben. Dus meerdere tabellen kan je zo genereren.
