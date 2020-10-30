@@ -42,3 +42,25 @@ geeft voor noemer TEST als output (mits geconfigureerd):
 | abc-005  | 2 |   | 12 |
 
 Dit is een voorbeeld van 1 noemer. maar je kan er dus meerdere hebben. Dus meerdere tabellen kan je zo genereren.
+
+## configureren
+
+Hier een voorbeeld van een docker-compose file hoe je deze tool kan draaien
+
+```yaml
+version: '2'
+
+services:
+  jsongrafana:
+    image: opvolger/json.grafana.datasources:latest
+    container_name: jsongrafanadatasources
+    ports:
+      - 8080:80
+    networks:
+      default:
+        aliases:
+          - jsongrafana
+    volumes:
+        - $PWD/data:/home/data
+    restart: always
+```

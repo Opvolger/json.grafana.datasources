@@ -1,0 +1,15 @@
+version: '2'
+
+services:
+  jsongrafana:
+    image: opvolger/json.grafana.datasources:latest
+    container_name: jsongrafanadatasources
+    ports:
+      - 8080:80
+    networks:
+      default:
+        aliases:
+          - jsongrafana
+    volumes:
+        - $PWD/data:/home/data
+    restart: always
