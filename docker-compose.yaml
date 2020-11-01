@@ -1,11 +1,19 @@
 version: '2'
 
 services:
+  grafana:
+    image: grafana/grafana:6.5.0
+    ports:
+      - 8182:3000
+    networks:
+      default:
+        aliases:
+          - grafana      
   jsongrafana:
     image: opvolger/json.grafana.datasources:latest
     container_name: jsongrafanadatasources
     ports:
-      - 8080:80
+      - 8181:80
     networks:
       default:
         aliases:
