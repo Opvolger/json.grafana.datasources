@@ -15,7 +15,7 @@ grafana-cli plugins install grafana-simple-json-datasource
 
 ### Enkele bron
 
-TODO
+Een compleet overzicht (table) opsturen voor een dashboard.
 
 ### Meerdere bronnen
 
@@ -99,6 +99,67 @@ grafana-cli plugins install grafana-simple-json-datasource
 Aanmaken DataSource in grafana
 
 zet deze naar de "json.grafana.datasources" http://jsongrafana:80/simpeljson
+
+## Voorbeeld (enkele bron, hele table)
+
+Je kan een compleet tabel sturen met de volgende manier.
+
+### Aanmaken table/info
+
+Post de volgende info in [storedata/set_info](http://localhost:8181/storedata/set_info), dit kan via [swagger](http://localhost:8181/swagger)
+
+```json
+{
+  "name": "test_enkel",
+  "info": {
+    "description": "Overzicht voor test_enkel",
+    "type": "default"
+  },
+  "table": [
+    {
+        "jsonvalue":  "key",
+        "type":  "string",
+        "text":  "Machinename"
+    },
+    {
+        "jsonvalue":  "kolom_bool",
+        "type":  "bool",
+        "text":  "bool kolom"
+    },
+    {
+        "jsonvalue":  "kolom_time",
+        "type":  "time",
+        "text":  "tijd kolom"
+    },
+    {
+        "jsonvalue":  "kolom_string",
+        "type":  "string",
+        "text":  "string kolom"
+    }
+  ]
+}
+```
+
+Dit zal in de data-folder een dit test aanmaken met 2 files erin, table.json en info.json
+
+### Data sturen
+
+Post de volgende info in [storedata/send_data](http://localhost:8181/storedata/send_data), dit kan via [swagger](http://localhost:8181/swagger)
+
+4x dus
+
+```json
+{
+  "name": "test_enkel",
+  "json_data": [ 
+    { "key": "machine1", "kolom_bool": true, "kolom_time": "2020-10-27T21:24:31.78Z", "kolom_string": "iets" },
+    { "key": "machine2", "kolom_bool": true, "kolom_time": "2020-10-27T21:24:31.78Z", "kolom_string": "iets meer" },
+    { "key": "machine3", "kolom_bool": false, "kolom_time": "2020-10-28T21:24:31.78Z", "kolom_string": "iets minder" },
+    { "key": "machine4", "kolom_bool": false, "kolom_time": "2020-11-27T21:24:31.78Z", "kolom_string": "niets" },
+    { "key": "machine5", "kolom_bool": true, "kolom_time": "2019-10-27T21:24:31.78Z", "kolom_string": "hoi iets" }
+  ] 
+}
+```
 
 ## Voorbeeld (uit meerdere bronnen)
 
@@ -185,7 +246,7 @@ Post de volgende info in [storedatakeyvalue/send_data](http://localhost:8181/sto
 }
 ```
 
-### Dashboard maken
+## Dashboard maken
 
 Je kan nu in Grafana een dashboard maken kies table ipv timeserie en natuurlijk de SimpleJson Als bron. Kies test en zie je dashboard.
 
